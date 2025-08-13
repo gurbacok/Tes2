@@ -95,10 +95,7 @@
             <div class="bg-white rounded-lg shadow-md p-6">
                 <div class="flex justify-between items-center mb-6">
                     <h2 class="text-2xl font-bold text-gray-800">Pengaduan Terkini</h2>
-                    <div id="adminControl" class="flex items-center space-x-4">
-                        <input type="password" id="adminPassword" placeholder="Masukkan password admin" class="px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 admin-action">
-                        <button onclick="toggleAdminMode()" class="bg-green-700 text-white px-4 py-2 rounded-md hover:bg-green-800 transition duration-300">Mode Admin</button>
-                    </div>
+                    =======
                 </div>
                 
                 <div id="complaintsContainer" class="space-y-4">
@@ -225,17 +222,27 @@
                             ${complaint.replies.map(reply => `
                                 <div class="bg-gray-50 p-2 rounded mb-2">
                                     <p class="text-sm text-gray-600">${reply.message}</p>
-                                    <p class="text-xs text-gray-400 mt-1">Admin - ${new Date(reply.timestamp).toLocaleString('id-ID')}</p>
+                                    <p class="text-xs text-gray-400 mt-1">Komentar - ${new Date(reply.timestamp).toLocaleString('id-ID')}</p>
                                 </div>
                             `).join('')}
                         </div>
                         
-                        <div class="admin-action">
-                            <div class="flex space-x-2">
-                                <textarea id="reply-${complaint.id}" class="flex-grow px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-green-500" placeholder="Tulis tanggapan..."></textarea>
-                                <button onclick="addReply(${complaint.id})" class="bg-blue-600 text-white px-3 py-2 rounded-md text-sm hover:bg-blue-700">Balas</button>
+                        <div class="mt-3">
+                            <div class="bg-blue-50 p-3 rounded-md mb-2">
+                                <h4 class="font-medium text-sm mb-1 text-blue-800">Kirim Komentar:</h4>
+                                <div class="flex space-x-2">
+                                    <textarea id="reply-${complaint.id}" class="flex-grow px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-green-500" placeholder="Tulis komentar anda..."></textarea>
+                                    <button onclick="addReply(${complaint.id})" class="bg-blue-600 text-white px-3 py-2 rounded-md text-sm hover:bg-blue-700 whitespace-nowrap">Kirim</button>
+                                </div>
                             </div>
-                            <button onclick="deleteComplaint(${complaint.id})" class="mt-2 bg-red-600 text-white px-3 py-1 rounded-md text-sm hover:bg-red-700">Hapus Pengaduan</button>
+                            <div class="flex justify-end mt-2">
+                                <button onclick="deleteComplaint(${complaint.id})" class="bg-red-600 text-white px-3 py-1 rounded-md text-sm hover:bg-red-700 flex items-center">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                    </svg>
+                                    Hapus Pengaduan
+                                </button>
+                            </div>
                         </div>
                     </div>
                 `;
@@ -247,26 +254,37 @@
         // Admin functionality
         let adminMode = false;
         
+        function showPasswordInput() {
+            document.getElementById('passwordSection').classList.remove('hidden');
+            document.querySelector('#adminControl button').classList.add('hidden');
+        }
+
+        function exitAdminMode() {
+            document.getElementById('passwordSection').classList.add('hidden');
+            document.querySelector('#adminControl button').classList.remove('hidden');
+            document.getElementById('adminPassword').value = '';
+        }
+
         function toggleAdminMode() {
             const passwordInput = document.getElementById('adminPassword');
             
-            if (!adminMode) {
-                if (passwordInput.value === 'baco') {
-                    adminMode = true;
-                    document.body.classList.add('admin-mode');
-                    alert('Mode admin diaktifkan. Anda sekarang dapat menanggapi dan menghapus pengaduan.');
-                    passwordInput.value = '';
-                } else {
-                    alert('Password salah!');
-                }
+            if (passwordInput.value === 'baco') {
+                adminMode = true;
+                document.body.classList.add('admin-mode');
+                document.getElementById('passwordSection').classList.add('hidden');
+                document.querySelector('#adminControl button').classList.remove('hidden');
+                document.querySelector('#adminControl button').textContent = 'Admin Mode';
+                document.querySelector('#adminControl button').classList.add('bg-yellow-600');
+                document.querySelector('#adminControl button').classList.remove('bg-green-700');
+                document.getElementById('adminPassword').value = '';
             } else {
-                adminMode = false;
-                document.body.classList.remove('admin-mode');
+                alert('Password salah! Password yang benar adalah "baco"');
+                document.getElementById('adminPassword').value = '';
+                document.getElementById('adminPassword').focus();
             }
         }
 
         function addReply(complaintId) {
-            if (!adminMode) return;
             
             const replyInput = document.getElementById(`reply-${complaintId}`);
             const replyMessage = replyInput.value.trim();
@@ -294,13 +312,20 @@
         }
 
         function deleteComplaint(complaintId) {
-            if (!adminMode || !confirm('Apakah Anda yakin ingin menghapus pengaduan ini?')) return;
+            const password = prompt('Masukkan password untuk menghapus pengaduan:');
+            if (password !== 'baco') {
+                alert('Password salah!');
+                return;
+            }
+            
+            if (!confirm('Apakah Anda yakin ingin menghapus pengaduan ini?')) return;
             
             const complaints = JSON.parse(localStorage.getItem('complaints'));
             const updatedComplaints = complaints.filter(c => c.id !== complaintId);
             
             localStorage.setItem('complaints', JSON.stringify(updatedComplaints));
             loadComplaints();
+            alert('Pengaduan berhasil dihapus!');
         }
 
         // Initialize
@@ -308,4 +333,3 @@
     </script>
 </body>
 </html>
-
